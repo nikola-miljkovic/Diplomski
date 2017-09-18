@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Diplomski</string>
+    <string name="title_activity_audio_master">AudioMasterActivity</string>
+    <string name="title_activity_audio_slave">AudioSlaveActivity</string>
+    <string name="title_activity_bluetooth_master">BluetoothMasterActivity</string>
+    <string name="title_activity_bluetooth_slave">BluetoothSlaveActivity</string>
+</resources>
