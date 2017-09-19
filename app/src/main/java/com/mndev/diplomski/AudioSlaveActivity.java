@@ -36,7 +36,10 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
     private TextView mNewTimestampTV;
     private TextView mActualTimestampTV;
     private TextView mDeltaTV;
+    private TextView mDeltaAvgTV;
     private TextView mIterationTV;
+    private TextView mLagTV;
+    private TextView mLagAvgTV;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,9 +47,12 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
         setContentView(R.layout.activity_audio_slave);
 
         mDeltaTV = (TextView)findViewById(R.id.tv_delta);
+        mDeltaAvgTV = (TextView)findViewById(R.id.tv_delta_avg);
         mIterationTV = (TextView)findViewById(R.id.tv_iteration);
         mActualTimestampTV = (TextView)findViewById(R.id.tv_actualts);
         mNewTimestampTV = (TextView)findViewById(R.id.tv_newts);
+        mLagTV = (TextView)findViewById(R.id.tv_lag);
+        mLagAvgTV = (TextView)findViewById(R.id.tv_lag_avg);
 
         mParams = (AudioParamsModel)getIntent().getSerializableExtra(MainActivity.EXTRA_AUDIO_PARAMS);
 
@@ -81,6 +87,12 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
         new Thread(new Runnable() {
             private int mIteration = 0;
             private long mDelta;
+            private long mDeltaAvg;
+            private long mDeltaSum = 0;
+            private long mLag = 0;
+            private long mLagAvg = 0;
+            private long mLagSum = 0;
+            private int mHalfIterations = mParams.getIterations() / 2;
 
             @Override
             public void run() {
@@ -117,7 +129,8 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                 int timeBuffer = 0;
                 long time = System.currentTimeMillis();
                 float rms;
-                int val = 115;
+                int val = 110;
+                int valOverhead = 60;
                 boolean isAboveMargin = false;
                 FunctionSurface functionSurface = new FunctionSurface(mSurfaceView.getMeasuredHeight(), mSurfaceView.getMeasuredWidth(), val);
                 while (true) {
@@ -135,7 +148,16 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                         if (!isAboveMargin && (int)rms * 2 > val) {
                             isAboveMargin = true;
 
-                            mDelta = System.currentTimeMillis() - 25 - mTimestampVector[mIteration];
+                            if (mIteration < mHalfIterations) {
+                                mDelta = System.currentTimeMillis() - mTimestampVector[mIteration];
+                                mDeltaSum += mDelta;
+                                mDeltaAvg = mDeltaSum / (mIteration + 1);
+                            } else {
+                                mLag = System.currentTimeMillis() - mDeltaAvg - mTimestampVector[mIteration];
+                                mLagSum += mLag;
+                                mLagAvg = mLagSum / (mIteration % mHalfIterations + 1);
+                            }
+
                             mIteration += 1;
                         } else if (isAboveMargin && (int)rms * 2 < val) {
                             isAboveMargin = false;
@@ -157,9 +179,12 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                             @Override
                             public void run() {
                                 long currentTime = System.currentTimeMillis();
-                                mNewTimestampTV.setText(String.valueOf(currentTime - mDelta));
+                                mNewTimestampTV.setText(String.valueOf(currentTime - (mDeltaAvg - mLagAvg)));
                                 mActualTimestampTV.setText(String.valueOf(currentTime));
                                 mDeltaTV.setText(String.valueOf(mDelta));
+                                mDeltaAvgTV.setText(String.valueOf(mDeltaAvg));
+                                mLagTV.setText(String.valueOf(mLag));
+                                mLagAvgTV.setText(String.valueOf(mLagAvg));
                                 mIterationTV.setText(String.valueOf(mIteration));
                             }
                         });

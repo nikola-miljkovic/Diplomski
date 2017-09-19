@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.util.Log;
 
+import com.mndev.diplomski.Communicator;
+
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
@@ -25,11 +27,13 @@ public class BluetoothController {
     private BluetoothAdapter mBluetoothAdapter;
     private int mType;
     private Activity mActivity;
+    private Communicator mHandler;
     private Thread mConnectionThread;
 
-    public BluetoothController(Activity activity, int type) {
+    public BluetoothController(Activity activity, int type, Communicator handler) {
         mType = type;
         mActivity = activity;
+        mHandler = handler;
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
         }
@@ -92,7 +96,7 @@ public class BluetoothController {
                 if (socket != null) {
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
-                    manageMyConnectedSocket(socket);
+                    mHandler.handleConnection(socket);
                     try {
                         mmServerSocket.close();
                     } catch (IOException e) {
@@ -155,7 +159,7 @@ public class BluetoothController {
 
             // The connection attempt succeeded. Perform work associated with
             // the connection in a separate thread.
-            manageMyConnectedSocket(mmSocket);
+            mHandler.handleConnection(mmSocket);
         }
 
         // Closes the client socket and causes the thread to finish.
@@ -166,8 +170,5 @@ public class BluetoothController {
                 Log.e(TAG, "Could not close the client socket", e);
             }
         }
-    }
-
-    private void manageMyConnectedSocket(BluetoothSocket socket) {
     }
 }

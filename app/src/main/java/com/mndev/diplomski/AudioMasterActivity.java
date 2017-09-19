@@ -122,27 +122,13 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
 
                 Log.v("AUDIO", "Start recording");
 
-                int shortsRead = 0;
-                float newX = 0;
-                float currentSample;
-                float avg = 0.0f;
-                float secondsPassed = 0.0f;
                 float rms = 0.0f;
-                int timeBuffer = 0;
                 long time = System.currentTimeMillis();
-                long timeDelta = 0;
-                FunctionSurface functionSurface = new FunctionSurface(mSurfaceView.getMeasuredHeight(), mSurfaceView.getMeasuredWidth(), 100);
+                FunctionSurface functionSurface = new FunctionSurface(mSurfaceView.getMeasuredHeight(), mSurfaceView.getMeasuredWidth(), 120);
                 while (true) {
                     long timeMil = System.currentTimeMillis();
                     int numberOfShort = record.read(audioBuffer, 0, audioBuffer.length);
                     drawSize = (float) mSurfaceView.getWidth() * 4 / bufferSize;
-
-                    shortsRead += numberOfShort;
-                    timeBuffer += 44;
-                    if (timeBuffer > 1000) {
-                        secondsPassed += 1.0f;
-                        timeBuffer = timeBuffer - 1000;
-                    }
 
                     rms = 0.0f;
                     for (int i = 0; i < audioBuffer.length; i += 1) {
@@ -181,7 +167,7 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
 
     private class BeepThread implements Runnable {
         private Handler mHandler;
-        private ToneGenerator mTone = new ToneGenerator(AudioManager.STREAM_ALARM, 75);
+        private ToneGenerator mTone = new ToneGenerator(AudioManager.STREAM_ALARM, 80);
 
         long[] mVector;
         AudioParamsModel mParams;
