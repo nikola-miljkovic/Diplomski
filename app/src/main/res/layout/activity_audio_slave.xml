@@ -80,6 +80,10 @@
             android:id="@+id/audio_surface"
             android:layout_width="match_parent"
             android:layout_height="300px" />
+        <SurfaceView
+            android:id="@+id/test_surface"
+            android:layout_width="match_parent"
+            android:layout_height="300px" />
     </LinearLayout>
 
 </android.support.design.widget.CoordinatorLayout>

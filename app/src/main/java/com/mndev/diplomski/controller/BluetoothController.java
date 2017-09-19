@@ -24,6 +24,9 @@ public class BluetoothController {
     public static final int TYPE_MASTER = 0;
     public static final int TYPE_SLAVE = 1;
 
+    public static final int MSG_SYNC = 0;
+    public static final int MSG_SYNC_RES = 1;
+
     private BluetoothAdapter mBluetoothAdapter;
     private int mType;
     private Activity mActivity;

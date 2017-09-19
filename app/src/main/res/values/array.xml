@@ -4,4 +4,9 @@
         <item>Sound</item>
         <item>Bluetooth</item>
     </string-array>
+    <string-array name="testSpinnerItems">
+        <item>Clock</item>
+        <item>Sound</item>
+        <item>Animation</item>
+    </string-array>
 </resources>

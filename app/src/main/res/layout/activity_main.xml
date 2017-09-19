@@ -7,8 +7,8 @@
     tools:context="com.mndev.diplomski.MainActivity">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
         <EditText
@@ -40,6 +40,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:entries="@array/functionSpinnerItems"
+            />
+
+        <Spinner
+            android:id="@+id/testSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/testSpinnerItems"
             />
 
         <LinearLayout
