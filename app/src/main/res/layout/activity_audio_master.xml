@@ -12,6 +12,16 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/tv_actualts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp"
+            android:textSize="40sp"
+            android:text="TextView" />
+
         <SurfaceView
             android:id="@+id/audio_surface"
             android:layout_width="match_parent"

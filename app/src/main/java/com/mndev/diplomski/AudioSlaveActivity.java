@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.TextView;
 
 import com.mndev.diplomski.model.AudioParamsModel;
 import com.mndev.diplomski.utils.TimeUtils;
@@ -32,10 +33,20 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
 
+    private TextView mNewTimestampTV;
+    private TextView mActualTimestampTV;
+    private TextView mDeltaTV;
+    private TextView mIterationTV;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_audio_master);
+        setContentView(R.layout.activity_audio_slave);
+
+        mDeltaTV = (TextView)findViewById(R.id.tv_delta);
+        mIterationTV = (TextView)findViewById(R.id.tv_iteration);
+        mActualTimestampTV = (TextView)findViewById(R.id.tv_actualts);
+        mNewTimestampTV = (TextView)findViewById(R.id.tv_newts);
 
         mParams = (AudioParamsModel)getIntent().getSerializableExtra(MainActivity.EXTRA_AUDIO_PARAMS);
 
@@ -69,6 +80,7 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
     void recordAudio() {
         new Thread(new Runnable() {
             private int mIteration = 0;
+            private long mDelta;
 
             @Override
             public void run() {
@@ -105,10 +117,10 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                 int timeBuffer = 0;
                 long time = System.currentTimeMillis();
                 float rms;
-                int val = 75;
+                int val = 115;
                 boolean isAboveMargin = false;
                 FunctionSurface functionSurface = new FunctionSurface(mSurfaceView.getMeasuredHeight(), mSurfaceView.getMeasuredWidth(), val);
-                while (mIteration < mParams.getIterations()) {
+                while (true) {
                     long timeMil = System.currentTimeMillis();
                     int numberOfShort = record.read(audioBuffer, 0, audioBuffer.length);
 
@@ -119,15 +131,17 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
 
                     rms = 20.0f * (float)Math.log10(Math.sqrt(rms / audioBuffer.length));
 
-                    if (!isAboveMargin && (int)rms * 2 > val) {
-                        isAboveMargin = true;
+                    if (mIteration < mParams.getIterations()) {
+                        if (!isAboveMargin && (int)rms * 2 > val) {
+                            isAboveMargin = true;
 
-                        long delta = System.currentTimeMillis() - 25 - mTimestampVector[mIteration];
-                        Log.d("DELTA", "DELTA: " + delta + " Iteration " + mIteration + " Value " + mTimestampVector[mIteration]);
-                        mIteration += 1;
-                    } else if (isAboveMargin && (int)rms * 2 < val) {
-                        isAboveMargin = false;
+                            mDelta = System.currentTimeMillis() - 25 - mTimestampVector[mIteration];
+                            mIteration += 1;
+                        } else if (isAboveMargin && (int)rms * 2 < val) {
+                            isAboveMargin = false;
+                        }
                     }
+
                     functionSurface.addValue(rms);
 
                     if (System.currentTimeMillis() - 16 > time) {
@@ -138,12 +152,23 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
 
                         mSurfaceHolder.unlockCanvasAndPost(canvas);
                         time = System.currentTimeMillis();
+
+                        AudioSlaveActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                long currentTime = System.currentTimeMillis();
+                                mNewTimestampTV.setText(String.valueOf(currentTime - mDelta));
+                                mActualTimestampTV.setText(String.valueOf(currentTime));
+                                mDeltaTV.setText(String.valueOf(mDelta));
+                                mIterationTV.setText(String.valueOf(mIteration));
+                            }
+                        });
                     }
                 }
 
-                record.stop();
+                /*record.stop();
                 record.release();
-                Log.d("DELTA", "DONE!");
+                Log.d("DELTA", "DONE!");*/
             }
         }).start();
     }

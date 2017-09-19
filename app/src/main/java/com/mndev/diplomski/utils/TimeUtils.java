@@ -35,4 +35,11 @@ public class TimeUtils {
             return null;
         }
     }
+
+    public static String dateTimeToText(Date inputTime) {
+        DateFormat formatter = new SimpleDateFormat("H:mm");
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.MINUTE, calendar.get(Calendar.MINUTE) + 1);
+        return formatter.format(calendar.getTime());
+    }
 }

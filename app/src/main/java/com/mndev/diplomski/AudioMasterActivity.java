@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.TextView;
 
 import com.mndev.diplomski.model.AudioParamsModel;
 import com.mndev.diplomski.utils.TimeUtils;
@@ -37,6 +38,8 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
     private SurfaceHolder mSurfaceHolder;
     private BeepThread mBeepThread;
 
+    private TextView mActualTimestampTV;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +48,8 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
         mParams = (AudioParamsModel)getIntent().getSerializableExtra(MainActivity.EXTRA_AUDIO_PARAMS);
 
         mTimestampVector = TimeUtils.getTimeVector(mParams.getTime(), mParams.getInterval(), mParams.getIterations());
+
+        mActualTimestampTV = (TextView)findViewById(R.id.tv_actualts);
 
         mSurfaceView = (SurfaceView)findViewById(R.id.audio_surface);
         mSurfaceHolder = mSurfaceView.getHolder();
@@ -155,6 +160,14 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
 
                         mSurfaceHolder.unlockCanvasAndPost(canvas);
                         time = System.currentTimeMillis();
+
+                        AudioMasterActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                long currentTime = System.currentTimeMillis();
+                                mActualTimestampTV.setText(String.valueOf(currentTime));
+                            }
+                        });
                     }
                 }
 

@@ -84,6 +84,11 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        Date currentTime = new Date();
+        mStartTime.setText(TimeUtils.dateTimeToText(currentTime));
+        mInterval.setText("500");
+        mIterations.setText("10");
     }
 
 
