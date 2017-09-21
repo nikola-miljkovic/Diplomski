@@ -7,19 +7,14 @@ import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.widget.TextView;
 
 import com.mndev.diplomski.model.AudioParamsModel;
@@ -62,7 +57,6 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
 
         mBeepThread = new BeepThread(mHandler, mTimestampVector, mParams);
         long delta = mTimestampVector[0] - System.currentTimeMillis();
-        Log.d("DELTA", "DELTA " + delta);
         mHandler.postDelayed(mBeepThread, delta);
     }
 
@@ -167,6 +161,7 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
 
     private class BeepThread implements Runnable {
         private Handler mHandler;
+        private long mDelta;
         private ToneGenerator mTone = new ToneGenerator(AudioManager.STREAM_ALARM, 80);
 
         long[] mVector;
@@ -181,16 +176,22 @@ public class AudioMasterActivity extends Activity implements SurfaceHolder.Callb
 
         @Override
         public void run() {
-            if (mIteration == mVector.length) {
-                return;
-            }
-
             mTone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200);
 
-            long delta = System.currentTimeMillis() - mVector[mIteration];
-            Log.d("OUTPUT", "DELTA: " + delta);
+            mDelta = System.currentTimeMillis() - mVector[mIteration];
+
             mIteration += 1;
-            mHandler.postDelayed(this, mParams.getInterval() - delta);
+            if (mIteration == mVector.length) {
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        MediaPlayer mPlayer = MediaPlayer.create(AudioMasterActivity.this, R.raw.mario);
+                        mPlayer.start();
+                    }
+                }, 5000 - mDelta);
+            } else {
+                mHandler.postDelayed(this, mParams.getInterval() - mDelta);
+            }
         }
     }
 }

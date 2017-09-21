@@ -6,22 +6,18 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.os.Handler;
+import android.os.Process;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.widget.TextView;
 
 import com.mndev.diplomski.model.AudioParamsModel;
 import com.mndev.diplomski.utils.TimeUtils;
-
-import java.util.Date;
 
 import static com.mndev.diplomski.FunctionSurface.SAMPLE_RATE;
 
@@ -32,14 +28,16 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
     private Paint mPaint;
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
+    private MediaPlayer mPlayer;
+    private Handler mHandler = new Handler();
 
     private TextView mNewTimestampTV;
     private TextView mActualTimestampTV;
     private TextView mDeltaTV;
     private TextView mDeltaAvgTV;
     private TextView mIterationTV;
-    private TextView mLagTV;
-    private TextView mLagAvgTV;
+    private TextView mDeltaMinTV;
+    private TextView mIntervalAvgTV;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +46,11 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
 
         mDeltaTV = (TextView)findViewById(R.id.tv_delta);
         mDeltaAvgTV = (TextView)findViewById(R.id.tv_delta_avg);
+        mDeltaMinTV = (TextView)findViewById(R.id.tv_delta_min);
+        mIntervalAvgTV = (TextView)findViewById(R.id.tv_interval_avg);
         mIterationTV = (TextView)findViewById(R.id.tv_iteration);
         mActualTimestampTV = (TextView)findViewById(R.id.tv_actualts);
         mNewTimestampTV = (TextView)findViewById(R.id.tv_newts);
-        mLagTV = (TextView)findViewById(R.id.tv_lag);
-        mLagAvgTV = (TextView)findViewById(R.id.tv_lag_avg);
 
         mParams = (AudioParamsModel)getIntent().getSerializableExtra(MainActivity.EXTRA_AUDIO_PARAMS);
 
@@ -89,14 +87,14 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
             private long mDelta;
             private long mDeltaAvg;
             private long mDeltaSum = 0;
-            private long mLag = 0;
-            private long mLagAvg = 0;
-            private long mLagSum = 0;
-            private int mHalfIterations = mParams.getIterations() / 2;
+            private long mDeltaMin = 0;
+            private long mIntervalAvg = 0;
+            private long mIntervalSum = 0;
+            private long mIntervalTime = mTimestampVector[0];
 
             @Override
             public void run() {
-                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
+                Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
                 // buffer size in bytes
                 int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE,
@@ -128,13 +126,14 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
 
                 int timeBuffer = 0;
                 long time = System.currentTimeMillis();
+                long iterationTime;
                 float rms;
                 int val = 110;
                 int valOverhead = 60;
                 boolean isAboveMargin = false;
                 FunctionSurface functionSurface = new FunctionSurface(mSurfaceView.getMeasuredHeight(), mSurfaceView.getMeasuredWidth(), val);
                 while (true) {
-                    long timeMil = System.currentTimeMillis();
+                    iterationTime = System.currentTimeMillis();
                     int numberOfShort = record.read(audioBuffer, 0, audioBuffer.length);
 
                     rms = 0.0f;
@@ -148,17 +147,32 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                         if (!isAboveMargin && (int)rms * 2 > val) {
                             isAboveMargin = true;
 
-                            if (mIteration < mHalfIterations) {
-                                mDelta = System.currentTimeMillis() - mTimestampVector[mIteration];
-                                mDeltaSum += mDelta;
-                                mDeltaAvg = mDeltaSum / (mIteration + 1);
+                            mIntervalSum += Math.abs(iterationTime - mIntervalTime);
+                            mIntervalAvg = mIntervalSum / (mIteration + 1);
+                            mIntervalTime = iterationTime;
+                            mDelta = iterationTime - mTimestampVector[mIteration];
+                            mDeltaSum += mDelta;
+                            mDeltaAvg = mDeltaSum / (mIteration + 1);
+
+                            if (mDeltaMin == 0) {
+                                mDeltaMin = mDelta;
+                            } else if (mDeltaMin > 0) {
+                                mDeltaMin = Math.min(mDelta, mDeltaMin);
                             } else {
-                                mLag = System.currentTimeMillis() - mDeltaAvg - mTimestampVector[mIteration];
-                                mLagSum += mLag;
-                                mLagAvg = mLagSum / (mIteration % mHalfIterations + 1);
+                                mDeltaMin = Math.max(mDelta, mDeltaMin);
                             }
 
                             mIteration += 1;
+
+                            if (mIteration == mParams.getIterations()) {
+                                mHandler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        MediaPlayer mPlayer = MediaPlayer.create(AudioSlaveActivity.this, R.raw.mario);
+                                        mPlayer.start();
+                                    }
+                                }, mTimestampVector[mIteration - 1] + 5000 - (System.currentTimeMillis() - mDeltaMin + mIntervalAvg));
+                            }
                         } else if (isAboveMargin && (int)rms * 2 < val) {
                             isAboveMargin = false;
                         }
@@ -179,12 +193,12 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                             @Override
                             public void run() {
                                 long currentTime = System.currentTimeMillis();
-                                mNewTimestampTV.setText(String.valueOf(currentTime - (mDeltaAvg - mLagAvg)));
+                                mNewTimestampTV.setText(String.valueOf(currentTime - mDeltaMin + mIntervalAvg * 2));
                                 mActualTimestampTV.setText(String.valueOf(currentTime));
                                 mDeltaTV.setText(String.valueOf(mDelta));
                                 mDeltaAvgTV.setText(String.valueOf(mDeltaAvg));
-                                mLagTV.setText(String.valueOf(mLag));
-                                mLagAvgTV.setText(String.valueOf(mLagAvg));
+                                mDeltaMinTV.setText(String.valueOf(mDeltaMin));
+                                mIntervalAvgTV.setText(String.valueOf(mIntervalAvg));
                                 mIterationTV.setText(String.valueOf(mIteration));
                             }
                         });
@@ -196,5 +210,14 @@ public class AudioSlaveActivity extends Activity implements SurfaceHolder.Callba
                 Log.d("DELTA", "DONE!");*/
             }
         }).start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mPlayer != null) {
+            mPlayer.stop();
+        }
     }
 }

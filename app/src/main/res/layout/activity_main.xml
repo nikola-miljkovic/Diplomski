@@ -11,13 +11,39 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textSize="20sp"
+            android:text="Vreme početka sinhronizacije:" />
+
         <EditText
             android:id="@+id/start_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="14:35"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:inputType="time" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textSize="20sp"
+            android:text="Dužina intervala(ms):" />
 
         <EditText
             android:id="@+id/interval"
@@ -25,7 +51,22 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="500 (In ms)"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:inputType="number" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textSize="20sp"
+            android:text="Broj iteracija:" />
 
         <EditText
             android:id="@+id/iterations"
@@ -33,19 +74,53 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="10"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:inputType="number" />
+
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:textSize="20sp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="Funkcionalnost:" />
 
         <Spinner
             android:id="@+id/functionSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:entries="@array/functionSpinnerItems"
             />
+
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textSize="20sp"
+            android:text="Test primer:" />
 
         <Spinner
             android:id="@+id/testSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:entries="@array/testSpinnerItems"
             />
 

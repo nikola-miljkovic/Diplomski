@@ -17,6 +17,7 @@ public class MainActivity extends Activity {
     boolean mShouldContinue = true;
 
     public static final String EXTRA_AUDIO_PARAMS = "START_TIME";
+    public static final String EXTRA_TEST = "TEST";
     public static int TestType = 0;
 
     private TextView mStartTime;
@@ -54,6 +55,7 @@ public class MainActivity extends Activity {
                 } else {
                     intent = new Intent(getBaseContext(), BluetoothMasterActivity.class);
                 }
+                intent.putExtra(EXTRA_TEST, mTestSpinner.getSelectedItemId());
                 startActivity(intent);
             }
         });
@@ -70,6 +72,7 @@ public class MainActivity extends Activity {
                 } else {
                     intent = new Intent(getBaseContext(), BluetoothSlaveActivity.class);
                 }
+                intent.putExtra(EXTRA_TEST, mTestSpinner.getSelectedItemId());
                 startActivity(intent);
             }
         });
@@ -79,6 +82,4 @@ public class MainActivity extends Activity {
         mInterval.setText("500");
         mIterations.setText("10");
     }
-
-
 }
