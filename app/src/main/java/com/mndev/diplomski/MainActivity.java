@@ -52,6 +52,11 @@ public class MainActivity extends Activity {
                     intent.putExtra(EXTRA_AUDIO_PARAMS, new AudioParamsModel(TimeUtils.textToDateTime(mStartTime.getText()),
                             Integer.parseInt(mInterval.getText().toString()),
                             Integer.parseInt(mIterations.getText().toString())));
+                } else if (mFunctionSpinner.getSelectedItemId() == 1) {
+                    intent = new Intent(getBaseContext(), AudioSharedActivity.class);
+                    intent.putExtra(EXTRA_AUDIO_PARAMS, new AudioParamsModel(TimeUtils.textToDateTime(mStartTime.getText()),
+                            Integer.parseInt(mInterval.getText().toString()),
+                            Integer.parseInt(mIterations.getText().toString())));
                 } else {
                     intent = new Intent(getBaseContext(), BluetoothMasterActivity.class);
                 }
@@ -66,6 +71,11 @@ public class MainActivity extends Activity {
                 Intent intent;
                 if (mFunctionSpinner.getSelectedItemId() == 0) {
                     intent = new Intent(getBaseContext(), AudioSlaveActivity.class);
+                    intent.putExtra(EXTRA_AUDIO_PARAMS, new AudioParamsModel(TimeUtils.textToDateTime(mStartTime.getText()),
+                            Integer.parseInt(mInterval.getText().toString()),
+                            Integer.parseInt(mIterations.getText().toString())));
+                } else if (mFunctionSpinner.getSelectedItemId() == 1) {
+                    intent = new Intent(getBaseContext(), AudioSharedActivity.class);
                     intent.putExtra(EXTRA_AUDIO_PARAMS, new AudioParamsModel(TimeUtils.textToDateTime(mStartTime.getText()),
                             Integer.parseInt(mInterval.getText().toString()),
                             Integer.parseInt(mIterations.getText().toString())));

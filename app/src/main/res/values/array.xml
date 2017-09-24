@@ -2,6 +2,7 @@
 <resources>
     <string-array name="functionSpinnerItems">
         <item>Sound</item>
+        <item>Sound - Shared</item>
         <item>Bluetooth (Basic)</item>
         <item>Bluetooth (Berkley)</item>
     </string-array>
