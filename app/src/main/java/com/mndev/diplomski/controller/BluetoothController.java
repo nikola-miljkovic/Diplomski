@@ -29,6 +29,7 @@ public class BluetoothController {
     public static final int MSG_TEST_REQ = 2;
     public static final int MSG_BSYNC_REQ = 2;
     public static final int MSG_BSYNC_RES = 3;
+    public static final int MSG_SSYNC_PING = 4;
 
     private BluetoothAdapter mBluetoothAdapter;
     private int mType;

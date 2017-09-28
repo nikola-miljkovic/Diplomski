@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.mndev.diplomski.controller.BluetoothController;
 import com.mndev.diplomski.model.AudioParamsModel;
 import com.mndev.diplomski.utils.TimeUtils;
 
@@ -56,7 +57,8 @@ public class MainActivity extends Activity {
                     intent = new Intent(getBaseContext(), AudioSharedActivity.class);
                     intent.putExtra(EXTRA_AUDIO_PARAMS, new AudioParamsModel(TimeUtils.textToDateTime(mStartTime.getText()),
                             Integer.parseInt(mInterval.getText().toString()),
-                            Integer.parseInt(mIterations.getText().toString())));
+                            Integer.parseInt(mIterations.getText().toString()),
+                            BluetoothController.TYPE_MASTER));
                 } else {
                     intent = new Intent(getBaseContext(), BluetoothMasterActivity.class);
                 }
@@ -78,7 +80,8 @@ public class MainActivity extends Activity {
                     intent = new Intent(getBaseContext(), AudioSharedActivity.class);
                     intent.putExtra(EXTRA_AUDIO_PARAMS, new AudioParamsModel(TimeUtils.textToDateTime(mStartTime.getText()),
                             Integer.parseInt(mInterval.getText().toString()),
-                            Integer.parseInt(mIterations.getText().toString())));
+                            Integer.parseInt(mIterations.getText().toString()),
+                            BluetoothController.TYPE_SLAVE));
                 } else {
                     intent = new Intent(getBaseContext(), BluetoothSlaveActivity.class);
                 }

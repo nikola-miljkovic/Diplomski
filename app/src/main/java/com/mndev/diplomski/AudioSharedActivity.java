@@ -1,6 +1,8 @@
 package com.mndev.diplomski;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -19,15 +21,22 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.mndev.diplomski.controller.BluetoothController;
 import com.mndev.diplomski.model.AudioParamsModel;
+import com.mndev.diplomski.model.ClientConnectionModel;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.mndev.diplomski.FunctionSurface.SAMPLE_RATE;
 
-public class AudioSharedActivity extends Activity implements SurfaceHolder.Callback {
+public class AudioSharedActivity extends Activity implements SurfaceHolder.Callback, Communicator {
 
     public static int STATE_LISTENER = 0;
     public static int STATE_INITIATOR = 1;
@@ -49,14 +58,20 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
     private TextView mDeltaTV;
     private TextView mEmitDelayTV;
     private TextView mIterationTV;
-    private TextView mDeltaMinTV;
+    private TextView mDelayTV;
     private TextView mIntervalAvgTV;
 
     private AtomicLong mEmittedTime = new AtomicLong(0);
     private AtomicBoolean mHasEmitted = new AtomicBoolean(false);
+    private AtomicBoolean mHasSynced = new AtomicBoolean(false);
 
     private Button mSharedButton;
+    private long mT0 = 0;
+    private long mPhi = 0;
+    private long mTimeDelta = 0;
 
+    private BluetoothController mBluetoothController;
+    private ClientConnectionModel mConnection;
     private Thread mBackgroundThread;
 
     @Override
@@ -66,7 +81,7 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
 
         mDeltaTV = (TextView)findViewById(R.id.tv_delta);
         mEmitDelayTV = (TextView)findViewById(R.id.tv_emit_delay);
-        mDeltaMinTV = (TextView)findViewById(R.id.tv_delta_min);
+        mDelayTV = (TextView)findViewById(R.id.tv_delay);
         mIntervalAvgTV = (TextView)findViewById(R.id.tv_interval_avg);
         mIterationTV = (TextView)findViewById(R.id.tv_iteration);
         mActualTimestampTV = (TextView)findViewById(R.id.tv_actualts);
@@ -95,6 +110,8 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
                 playPing();
             }
         });
+
+        mBluetoothController = new BluetoothController(this, mParams.getType(), this);
     }
 
     @Override
@@ -115,21 +132,43 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
     }
 
     public void playPing() {
-        mEmittedTime.set(System.currentTimeMillis());
+        final long time = System.currentTimeMillis();
+        mEmittedTime.set(time);
         mHasEmitted.set(true);
         mTone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200);
+
+        if (mConnection != null) {
+            synchronized (mConnection) {
+                try {
+                    if (mParams.getType() == BluetoothController.TYPE_MASTER) {
+                        mConnection.getOutputStream().write(ByteBuffer.allocate(12)
+                                .putInt(BluetoothController.MSG_SSYNC_PING)
+                                .putLong(time + (mTimeDelta - mPhi))
+                                .array());
+                    } else {
+                        mConnection.getOutputStream().write(ByteBuffer.allocate(12)
+                                .putInt(BluetoothController.MSG_SSYNC_PING)
+                                .putLong(time)
+                                .array());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     void recordAudio() {
         mBackgroundThread = new Thread(new Runnable() {
             private int mIteration = 0;
-            private long mDeltaAvg;
+            private long mDelay = 0;
             private long mDeltaSum = 0;
             private long mDelta = 0;
             private long mIntervalAvg = 0;
             private long mIntervalSum = 0;
             private long mIntervalTime = 0;
             private long mIntervalDelta = 0;
+            private long mTimeDiff = 0;
 
             private long mEmitDelay = 0;
             private long mEmitSum = 0;
@@ -177,6 +216,48 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
                 FunctionSurface functionSurface = new FunctionSurface(mSurfaceView.getMeasuredHeight(), mSurfaceView.getMeasuredWidth(), val);
                 while (!Thread.currentThread().isInterrupted()) {
                     iterationTime = System.currentTimeMillis();
+
+                    if (!mHasSynced.get() && mConnection != null) {
+                        synchronized (mConnection) {
+                            try {
+                                InputStream inputStream = mConnection.getInputStream();
+                                OutputStream outputStream = mConnection.getOutputStream();
+                                byte[] connBuffer = mConnection.getBuffer();
+
+                                if (inputStream.available()> 0) {
+                                    inputStream.read(connBuffer);
+                                    final long t3 = System.currentTimeMillis();
+
+                                    ByteBuffer buffer = ByteBuffer.wrap(connBuffer);
+                                    switch (buffer.getInt()) {
+                                        case BluetoothController.MSG_SYNC_RES: {
+                                            final long t1 = buffer.getLong();
+                                            final long t2 = buffer.getLong();
+
+                                            mTimeDelta = ((t1 - mT0) + (t2 -t3))/2;
+                                            mPhi = (t3 - mT0 - t2 + t1) / 2;
+                                            break;
+                                        }
+                                        case BluetoothController.MSG_SYNC_REQ: {
+                                            ByteBuffer outBuffer = ByteBuffer.allocate(20);
+                                            long t2 = System.currentTimeMillis();
+                                            outBuffer.putInt(BluetoothController.MSG_SYNC_RES);
+                                            outBuffer.putLong(t3);
+                                            outBuffer.putLong(t2);
+
+                                            outputStream.write(outBuffer.array());
+                                            break;
+                                        }
+                                    }
+
+                                    mHasSynced.set(true);
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
                     int numberOfShort = record.read(audioBuffer, 0, audioBuffer.length);
 
                     rms = 0.0f;
@@ -202,8 +283,28 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
                                 }
                             } else {
                                 mTimestampVector[mPingCount] = iterationTime;
-                            }
 
+                                if (mConnection != null) {
+                                    synchronized (mConnection) {
+                                        try {
+                                            if (mConnection.getInputStream().available() > 0) {
+                                                mConnection.getInputStream().read(mConnection.getBuffer());
+                                                ByteBuffer buffer = ByteBuffer.wrap(mConnection.getBuffer());
+                                                if (buffer.getInt() == BluetoothController.MSG_SSYNC_PING) {
+                                                    long emitTime = buffer.getLong();
+                                                    if (mParams.getType() == BluetoothController.TYPE_MASTER) {
+                                                        mDelay = iterationTime - emitTime + (mTimeDelta - mPhi);
+                                                    } else {
+                                                        mDelay = iterationTime - emitTime;
+                                                    }
+                                                }
+                                            }
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            }
 
                             if (mRole == STATE_LISTENER && mPingCount == 0) {
                                 runOnUiThread(new Runnable() {
@@ -278,6 +379,7 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
                                     mNewTimestampTV.setText(String.valueOf(currentTime - mDelta - mIntervalDelta));
                                     mActualTimestampTV.setText(String.valueOf(currentTime));
                                     mDeltaTV.setText(String.valueOf(mDelta));
+                                    mDelayTV.setText(String.valueOf(mDelay));
                                     mEmitDelayTV.setText(String.valueOf(mEmitDelay));
                                     mIntervalAvgTV.setText(String.valueOf(mIntervalAvg));
                                     mIterationTV.setText(String.valueOf(mIteration));
@@ -302,6 +404,33 @@ public class AudioSharedActivity extends Activity implements SurfaceHolder.Callb
 
         if (mPlayer != null) {
             mPlayer.stop();
+        }
+    }
+
+    @Override
+    public void handleConnection(BluetoothSocket socket) {
+        try {
+            final ClientConnectionModel connection = new ClientConnectionModel(socket);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Context context = getApplicationContext();
+                    CharSequence text = "Connected to " + connection.getSocket().getRemoteDevice().getName();
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+                }
+            });
+
+            if (mParams.getType() == BluetoothController.TYPE_MASTER) {
+                mT0 = System.currentTimeMillis();
+                connection.getOutputStream().write(BluetoothController.MSG_SYNC_REQ);
+            }
+
+            mConnection = connection;
+        } catch (Exception exc) {
+            exc.printStackTrace();
         }
     }
 }

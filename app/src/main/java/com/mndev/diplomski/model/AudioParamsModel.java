@@ -7,11 +7,19 @@ public class AudioParamsModel implements Serializable {
     private Date mTime;
     private int mInterval;
     private int mIterations;
+    private int mType;
 
     public AudioParamsModel(Date time, int interval, int iterations) {
         this.mTime = time;
         this.mInterval = interval;
         this.mIterations = iterations;
+    }
+
+    public AudioParamsModel(Date time, int interval, int iterations, int type) {
+        this.mTime = time;
+        this.mInterval = interval;
+        this.mIterations = iterations;
+        this.mType = type;
     }
 
     public Date getTime() {
@@ -36,5 +44,13 @@ public class AudioParamsModel implements Serializable {
 
     public void setIterations(int iterations) {
         this.mIterations = iterations;
+    }
+
+    public int getType() {
+        return mType;
+    }
+
+    public void setType(int type) {
+        mType = type;
     }
 }

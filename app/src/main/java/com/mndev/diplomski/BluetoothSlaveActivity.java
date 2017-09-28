@@ -189,15 +189,15 @@ public class BluetoothSlaveActivity extends AppCompatActivity implements Communi
 
     private void requestTimeUpdate() {
         if (mSocket != null) {
-            synchronized (mSocket) {
-                mT0 = System.currentTimeMillis();
-                try {
-                    mOutputStream.write(BluetoothController.MSG_SYNC_REQ);
-                    appendTerminal("Sending MSG_SYNC_REQ");
-                } catch (IOException e1) {
-                    e1.printStackTrace();
+                synchronized (mSocket) {
+                    mT0 = System.currentTimeMillis();
+                    try {
+                        mOutputStream.write(BluetoothController.MSG_SYNC_REQ);
+                        appendTerminal("Sending MSG_SYNC_REQ");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
-            }
         }
     }
 
